@@ -9,7 +9,8 @@ export async function readDashboard(){
  const sellers=await supabase.from('sellers').select('*').order('slot');if(sellers.error)throw sellers.error;
  const config:Record<string,string>={};for(const row of sellers.data){const key='sellers:'+row.store;const names=JSON.parse(config[key]||'[]');names[row.slot-1]=row.name;config[key]=JSON.stringify(names);}
  if(member.data.role==='admin'){const grants=await supabase.from('access_grants').select('email,store');if(grants.error)throw grants.error;for(const row of grants.data)if(row.store)config['email:'+row.store]=row.email;}
- return {admin:member.data.role==='admin',store:member.data.store,email:session.user.email,sales,config};
+ const goals:any[]=[];let goalOffset=0;while(true){const r=await supabase.from('sales_goals').select('*').order('period_start',{ascending:false}).order('store').order('period_type').range(goalOffset,goalOffset+999);if(r.error)throw r.error;goals.push(...r.data);if(r.data.length<1000)break;goalOffset+=1000;}
+ return {goals,admin:member.data.role==='admin',store:member.data.store,email:session.user.email,sales,config};
 }
 export async function writeDashboard(body:any){
  let result;
@@ -19,3 +20,4 @@ export async function writeDashboard(body:any){
  else throw Error('Ação inválida.');
  if(result.error)throw result.error;
 }
+
